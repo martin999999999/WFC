@@ -5,6 +5,12 @@
 #define MAX_CELLS 1000
 #define CELL_SIZE 40
 
+#define WINDOW_WIDTH_START 1000
+#define WINDOW_HEIGHT_START 800
+
+#define GRID_WIDTH_START WINDOW_WIDTH_START / CELL_SIZE
+#define GRID_HEIGHT_START WINDOW_HEIGHT_START / CELL_SIZE
+
 typedef struct
 {
     int x, y;
@@ -13,6 +19,8 @@ typedef struct
 
 Cell squares[MAX_CELLS];
 int square_count = 0;
+
+Cell **grid;
 
 // Generate a random RGB color
 COLORREF GenerateRandomColor()
@@ -23,6 +31,30 @@ COLORREF GenerateRandomColor()
 int AllignToGrid(int num)
 {
     return num - (num % CELL_SIZE);
+}
+
+void InitGrid()
+{
+    grid = calloc(WINDOW_HEIGHT_START, sizeof(Cell *));
+    for (size_t i = 0; i < WINDOW_HEIGHT_START; i++)
+    {
+        grid[i] = calloc(WINDOW_WIDTH_START, sizeof(Cell));
+
+        for (size_t j = 0; j < WINDOW_WIDTH_START; j++)
+        {
+            grid[i][j].x = i * 40;
+            grid[i][j].y = j * 40;
+        }
+    }
+}
+
+void DeleteGrid()
+{
+    for (size_t i = 0; i < WINDOW_HEIGHT_START; i++)
+    {
+        free(grid[i]);
+    }
+    free(grid);
 }
 
 // Window procedure
@@ -69,6 +101,25 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             DeleteObject(brush);
         }
 
+        for (int i = 0; i < square_count; ++i)
+        {
+            for (int j = 0; j < square_count; ++j)
+            {
+                HBRUSH brush = CreateSolidBrush(squares[i].color);
+                HBRUSH old = SelectObject(hdc, brush);
+
+                int x = grid[i][j].x;
+                int y = grid[i][j].y;
+
+                // Draw label inside square
+                SetTextColor(hdc, RGB(0, 0, 0)); // Black text
+                TextOut(hdc, x, y, "x", lstrlenA("x"));
+
+                SelectObject(hdc, old);
+                DeleteObject(brush);
+            }
+        }
+
         EndPaint(hwnd, &ps);
         return 0;
     }
@@ -101,11 +152,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         CLASS_NAME,
         "Draw Squares on Click",
         WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, // No resize, no maximize
-        CW_USEDEFAULT, CW_USEDEFAULT, 1000, 800,
+        CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH_START, WINDOW_HEIGHT_START,
         NULL, NULL, hInstance, NULL);
 
     if (!hwnd)
         return 0;
+
+    InitGrid();
 
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
@@ -116,6 +169,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+    DeleteGrid();
 
     return 0;
 }
