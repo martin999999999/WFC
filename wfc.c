@@ -2,14 +2,18 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <stdio.h>
+
 #define MAX_CELLS 1000
-#define CELL_SIZE 40
+#define CELL_FRAG_SIZE 20
+#define FRAGMENTS_PER_CELL 3
+#define CELL_SIZE (CELL_FRAG_SIZE * FRAGMENTS_PER_CELL)
 
-#define WINDOW_WIDTH_START 1000
-#define WINDOW_HEIGHT_START 800
+#define GRID_WIDTH_START 5
+#define GRID_HEIGHT_START 3
 
-#define GRID_WIDTH_START WINDOW_WIDTH_START / CELL_SIZE
-#define GRID_HEIGHT_START WINDOW_HEIGHT_START / CELL_SIZE
+#define WINDOW_WIDTH_START (GRID_WIDTH_START * CELL_SIZE)
+#define WINDOW_HEIGHT_START (GRID_HEIGHT_START * CELL_SIZE)
 
 typedef struct
 {
@@ -30,6 +34,7 @@ COLORREF GenerateRandomColor()
 
 int AllignToGrid(int num)
 {
+    printf("%d %d\n", num - (num % CELL_SIZE), num);
     return num - (num % CELL_SIZE);
 }
 
@@ -42,8 +47,8 @@ void InitGrid()
 
         for (size_t j = 0; j < WINDOW_WIDTH_START; j++)
         {
-            grid[i][j].x = i * 40;
-            grid[i][j].y = j * 40;
+            grid[i][j].y = i * CELL_SIZE;
+            grid[i][j].x = j * CELL_SIZE;
         }
     }
 }
@@ -101,9 +106,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             DeleteObject(brush);
         }
 
-        for (int i = 0; i < square_count; ++i)
+        for (int i = 0; i < GRID_HEIGHT_START; ++i)
         {
-            for (int j = 0; j < square_count; ++j)
+            for (int j = 0; j < GRID_WIDTH_START; ++j)
             {
                 HBRUSH brush = CreateSolidBrush(squares[i].color);
                 HBRUSH old = SelectObject(hdc, brush);
@@ -147,16 +152,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     RegisterClass(&wc);
 
+    RECT rect = { 0, 0, WINDOW_WIDTH_START, WINDOW_HEIGHT_START };
+    AdjustWindowRect(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, FALSE);
+
     HWND hwnd = CreateWindowEx(
         0,
         CLASS_NAME,
-        "Draw Squares on Click",
-        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, // No resize, no maximize
-        CW_USEDEFAULT, CW_USEDEFAULT, WINDOW_WIDTH_START, WINDOW_HEIGHT_START,
-        NULL, NULL, hInstance, NULL);
+        "Fixed-Size Client Area",
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        rect.right - rect.left,
+        rect.bottom - rect.top,
+        NULL, NULL, hInstance, NULL
+    );
 
     if (!hwnd)
         return 0;
+
+    AllocConsole();
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+    printf("Debug console initialized!\n");
 
     InitGrid();
 
