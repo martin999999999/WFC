@@ -111,6 +111,7 @@ void GenRoadShape(enum Surface Road[FRAGMENTS_PER_CELL_SIDE][FRAGMENTS_PER_CELL_
                     Road[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul] = ROAD;
             }
         }
+        log_C("\n");
     }
 }
 
@@ -135,12 +136,20 @@ void GenerateTile(int x, int y)
 
     GenRoadShape(Road, Sockets);
 
+    log_C("h\n");
+
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
+        log_C("h1\n");
         for (size_t j = 0; j < FRAGMENTS_PER_CELL_SIDE; j++)
         {
+            log_C("h2 s\n");
             grid[x][y].fragments[i][j].surface = Road[i][j];
-            grid[x][y].fragments[i][j].color = GenerateSurfaceColor(Road[i][j]);
+            log_C("h2 %d\n", grid[x][y].fragments[i][j].surface);
+            if (grid[x][y].fragments[i][j].surface >= SURFACE_COUNT)
+                grid[x][y].fragments[i][j].surface = rand() % (SURFACE_COUNT - 1) + 1;
+            log_C("h2 e %d\n", grid[x][y].fragments[i][j].surface);
+            grid[x][y].fragments[i][j].color = GenerateSurfaceColor(grid[x][y].fragments[i][j].surface);
         }
     }
 }
