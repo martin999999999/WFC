@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 
-#define MAX_CELLS 1000
 #define CELL_FRAG_SIZE 20
 #define FRAGMENTS_PER_CELL 3
 #define CELL_SIZE (CELL_FRAG_SIZE * FRAGMENTS_PER_CELL)
@@ -20,10 +19,6 @@ typedef struct
     int x, y;
     COLORREF color;
 } Cell;
-
-Cell squares[MAX_CELLS];
-int square_count = 0;
-
 
 unsigned grid_height = GRID_HEIGHT_START;
 unsigned grid_width = GRID_WIDTH_START;
@@ -52,6 +47,7 @@ void InitGrid()
         {
             grid[i][j].y = i * CELL_SIZE;
             grid[i][j].x = j * CELL_SIZE;
+            grid[i][j].color = RGB(255, 255, 255);
         }
     }
 }
@@ -76,18 +72,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_LBUTTONDOWN:
     {
-        if (square_count < MAX_CELLS)
-        {
-            int x = LOWORD(lParam);
-            int y = HIWORD(lParam);
 
-            squares[square_count].x = AllignToGrid(x);
-            squares[square_count].y = AllignToGrid(y);
-            squares[square_count].color = GenerateRandomColor();
-            square_count++;
+        int x = LOWORD(lParam);
+        int y = HIWORD(lParam);
 
-            InvalidateRect(hwnd, NULL, TRUE); // Redraw window
-        }
+        int grid_x = AllignToGrid(x);
+        int grid_y = AllignToGrid(y);
+
+        int row = grid_y / CELL_SIZE;
+        int column = grid_x / CELL_SIZE;
+
+        printf("%d %d %d %d\n", grid_x, grid_y, column, row);
+
+        grid[row][column].color = GenerateRandomColor();
+
+        InvalidateRect(hwnd, NULL, TRUE); // Redraw window
+
         break;
     }
 
@@ -96,25 +96,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
 
-        for (int i = 0; i < square_count; ++i)
-        {
-            HBRUSH brush = CreateSolidBrush(squares[i].color);
-            HBRUSH old = SelectObject(hdc, brush);
-
-            int x = squares[i].x;
-            int y = squares[i].y;
-            Rectangle(hdc, x, y, x + CELL_SIZE, y + CELL_SIZE);
-
-            SelectObject(hdc, old);
-            DeleteObject(brush);
-        }
-
         for (int i = 0; i < grid_height; ++i)
         {
             for (int j = 0; j < grid_width; ++j)
             {
-                HBRUSH brush = CreateSolidBrush(squares[i].color);
-                HBRUSH old = SelectObject(hdc, brush);
+                HBRUSH brush = CreateSolidBrush(grid[i][j].color);
+                HBRUSH oldBrush = SelectObject(hdc, brush);
+
+                HPEN pen = CreatePen(PS_SOLID, 0, grid[i][j].color);
+                HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
                 int x = grid[i][j].x;
                 int y = grid[i][j].y;
@@ -123,7 +113,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 SetTextColor(hdc, RGB(0, 0, 0)); // Black text
                 TextOut(hdc, x, y, "x", lstrlenA("x"));
 
-                SelectObject(hdc, old);
+                Rectangle(hdc, x, y, x + CELL_SIZE, y + CELL_SIZE);
+
+                SelectObject(hdc, oldPen);
+                SelectObject(hdc, oldBrush);
+                DeleteObject(pen);
                 DeleteObject(brush);
             }
         }
@@ -155,7 +149,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     RegisterClass(&wc);
 
-    RECT rect = { 0, 0, WINDOW_WIDTH_START, WINDOW_HEIGHT_START };
+    RECT rect = {0, 0, WINDOW_WIDTH_START, WINDOW_HEIGHT_START};
     AdjustWindowRect(&rect, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, FALSE);
 
     HWND hwnd = CreateWindowEx(
@@ -166,8 +160,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         CW_USEDEFAULT, CW_USEDEFAULT,
         rect.right - rect.left,
         rect.bottom - rect.top,
-        NULL, NULL, hInstance, NULL
-    );
+        NULL, NULL, hInstance, NULL);
 
     if (!hwnd)
         return 0;
