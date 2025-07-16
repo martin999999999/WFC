@@ -5,8 +5,8 @@
 #include <stdio.h>
 
 #define CELL_FRAG_SIZE 20
-#define FRAGMENTS_PER_CELL 3
-#define CELL_SIZE (CELL_FRAG_SIZE * FRAGMENTS_PER_CELL)
+#define FRAGMENTS_PER_CELL_SIDE 3
+#define CELL_SIZE (CELL_FRAG_SIZE * FRAGMENTS_PER_CELL_SIDE)
 
 #define GRID_WIDTH_START 5
 #define GRID_HEIGHT_START 3
@@ -16,8 +16,15 @@
 
 typedef struct
 {
+    int row, column;
+    COLORREF color;
+} Fragment;
+
+typedef struct
+{
     int x, y;
     COLORREF color;
+    Fragment fragments[FRAGMENTS_PER_CELL_SIDE][FRAGMENTS_PER_CELL_SIDE];
 } Cell;
 
 unsigned grid_height = GRID_HEIGHT_START;
@@ -48,6 +55,13 @@ void InitGrid()
             grid[i][j].y = i * CELL_SIZE;
             grid[i][j].x = j * CELL_SIZE;
             grid[i][j].color = RGB(255, 255, 255);
+            for (size_t r = 0; r < FRAGMENTS_PER_CELL_SIDE; r++)
+            {
+                for (size_t c = 0; c < FRAGMENTS_PER_CELL_SIDE; c++)
+                {
+                    grid[i][j].fragments[r][c].color = RGB(255, 255, 255);
+                }
+            }
         }
     }
 }
@@ -86,6 +100,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         grid[row][column].color = GenerateRandomColor();
 
+        for (size_t r = 0; r < FRAGMENTS_PER_CELL_SIDE; r++)
+        {
+            for (size_t c = 0; c < FRAGMENTS_PER_CELL_SIDE; c++)
+            {
+                grid[row][column].fragments[r][c].color = GenerateRandomColor();
+            }
+        }
+
         InvalidateRect(hwnd, NULL, TRUE); // Redraw window
 
         break;
@@ -100,25 +122,29 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             for (int j = 0; j < grid_width; ++j)
             {
-                HBRUSH brush = CreateSolidBrush(grid[i][j].color);
-                HBRUSH oldBrush = SelectObject(hdc, brush);
-
-                HPEN pen = CreatePen(PS_SOLID, 0, grid[i][j].color);
-                HPEN oldPen = (HPEN)SelectObject(hdc, pen);
-
                 int x = grid[i][j].x;
                 int y = grid[i][j].y;
+                for (size_t r = 0; r < FRAGMENTS_PER_CELL_SIDE; r++)
+                {
+                    for (size_t c = 0; c < FRAGMENTS_PER_CELL_SIDE; c++)
+                    {
+                        HBRUSH brush = CreateSolidBrush(grid[i][j].fragments[r][c].color);
+                        HBRUSH oldBrush = SelectObject(hdc, brush);
 
-                // Draw label inside square
-                SetTextColor(hdc, RGB(0, 0, 0)); // Black text
-                TextOut(hdc, x, y, "x", lstrlenA("x"));
+                        HPEN pen = CreatePen(PS_SOLID, 0, grid[i][j].fragments[r][c].color);
+                        HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
-                Rectangle(hdc, x, y, x + CELL_SIZE, y + CELL_SIZE);
+                        Rectangle(hdc, x + c * CELL_FRAG_SIZE, y + r * CELL_FRAG_SIZE, x + c * CELL_FRAG_SIZE + CELL_FRAG_SIZE, y + r * CELL_FRAG_SIZE + CELL_FRAG_SIZE);
 
-                SelectObject(hdc, oldPen);
-                SelectObject(hdc, oldBrush);
-                DeleteObject(pen);
-                DeleteObject(brush);
+                        SetTextColor(hdc, RGB(0, 0, 0));
+                        TextOut(hdc, x, y, "x", lstrlenA("x"));
+
+                        SelectObject(hdc, oldPen);
+                        SelectObject(hdc, oldBrush);
+                        DeleteObject(pen);
+                        DeleteObject(brush);
+                    }
+                }
             }
         }
 
