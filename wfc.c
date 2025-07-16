@@ -41,9 +41,9 @@ COLORREF GenerateRandomColor()
 
 COLORREF GenerateSurfaceColor(enum Surface surface)
 {
-    return RGB((rand() % surfaceColorToClamp[surface].clamps[RED].range  ) + surfaceColorToClamp[surface].clamps[RED].floor,
+    return RGB((rand() % surfaceColorToClamp[surface].clamps[RED].range) + surfaceColorToClamp[surface].clamps[RED].floor,
                (rand() % surfaceColorToClamp[surface].clamps[GREEN].range) + surfaceColorToClamp[surface].clamps[GREEN].floor,
-               (rand() % surfaceColorToClamp[surface].clamps[BLUE].range ) + surfaceColorToClamp[surface].clamps[BLUE].floor);
+               (rand() % surfaceColorToClamp[surface].clamps[BLUE].range) + surfaceColorToClamp[surface].clamps[BLUE].floor);
 }
 
 void GetCellSockets(enum Surface CellSocks[FRAGMENTS_PER_CELL_SIDE], int x, int y, enum Direction side)
@@ -59,8 +59,8 @@ void GetCellSockets(enum Surface CellSocks[FRAGMENTS_PER_CELL_SIDE], int x, int 
         return;
     }
 
-    int row_off = side == UP ? 0 : 2;
-    int col_off = side == LEFT ? 0 : 2;
+    int row_off = side == UP ? 2 : 0;
+    int col_off = side == LEFT ? 2 : 0;
 
     int row_mul = side > RIGHT ? 0 : 1;
     int col_mul = 1 - row_mul;
@@ -68,7 +68,7 @@ void GetCellSockets(enum Surface CellSocks[FRAGMENTS_PER_CELL_SIDE], int x, int 
 
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
-        printf(">> %d %d %d %d %d\n", side, x, y, i * row_mul + row_off * col_mul, i * col_mul + col_off * row_mul);
+        printf(">> s: %d x %d y %d r %d c %d surf: %d\n", side, x, y, i * row_mul + row_off * col_mul, i * col_mul + col_off * row_mul, grid[x][y].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface);
         CellSocks[i] = grid[x][y].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface;
     }
 }
@@ -95,20 +95,26 @@ void GenerateTile(int x, int y)
 
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
-        grid[x][y].fragments[0][i].surface = SAND;
-        grid[x][y].fragments[0][i].color = GenerateSurfaceColor(SAND);
+        grid[x][y].fragments[0][i].surface = UpSocks[i];
+        grid[x][y].fragments[0][i].color = GenerateSurfaceColor(UpSocks[i]);
     }
 
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
-        grid[x][y].fragments[1][i].surface = ROAD;
-        grid[x][y].fragments[1][i].color = GenerateSurfaceColor(ROAD);
+        grid[x][y].fragments[2][i].surface = DownSocks[i];
+        grid[x][y].fragments[2][i].color = GenerateSurfaceColor(DownSocks[i]);
     }
 
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
-        grid[x][y].fragments[2][i].surface = GRASS;
-        grid[x][y].fragments[2][i].color = GenerateSurfaceColor(GRASS);
+        grid[x][y].fragments[i][0].surface = LeftSocks[i];
+        grid[x][y].fragments[i][0].color = GenerateSurfaceColor(LeftSocks[i]);
+    }
+
+    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+    {
+        grid[x][y].fragments[i][2].surface = RightSocks[i];
+        grid[x][y].fragments[i][2].color = GenerateSurfaceColor(RightSocks[i]);
     }
 }
 

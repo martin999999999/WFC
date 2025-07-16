@@ -9,8 +9,8 @@ enum Surface
 enum Color
 {
     RED,
-    BLUE,
     GREEN,
+    BLUE,
     COLOR_COUNT
 };
 
@@ -35,7 +35,7 @@ typedef struct
 } RgbClamps;
 
 RgbClamps surfaceColorToClamp[SURFACE_COUNT] = {
-    [ROAD] = {{{100, 1}, {0, 4}, {5, 6}}},
-    [GRASS] = {{{0, 1}, {100, 1}, {0, 1}}},
-    [SAND] = {{{0,1}, {0, 1}, {200, 1}}}, 
+    [ROAD] = {{{0, 1}, {0, 4}, {5, 6}}},
+    [GRASS] = {{{0, 1}, {200, 1}, {0, 1}}},
+    [SAND] = {{{200,1}, {100, 1}, {0, 1}}}, 
 };
