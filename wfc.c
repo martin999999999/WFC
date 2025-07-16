@@ -33,6 +33,25 @@ unsigned grid_height = GRID_HEIGHT_START;
 unsigned grid_width = GRID_WIDTH_START;
 Cell **grid;
 
+FILE *logFile = NULL;
+
+// Custom logging function
+void log_C(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    vprintf(fmt, args); // Print to console
+
+    if (logFile)
+    {
+        vfprintf(logFile, fmt, args); // Also write to file
+        fflush(logFile);
+    }
+
+    va_end(args);
+}
+
 // Generate a random RGB color
 COLORREF GenerateRandomColor()
 {
@@ -54,7 +73,7 @@ void GetCellSockets(enum Surface CellSocks[FRAGMENTS_PER_CELL_SIDE], int x, int 
         for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
         {
             CellSocks[i] = rand() % SURFACE_COUNT;
-            printf("RAND s %d\n", side);
+            log_C("RAND s %d\n", side);
         }
         return;
     }
@@ -64,22 +83,35 @@ void GetCellSockets(enum Surface CellSocks[FRAGMENTS_PER_CELL_SIDE], int x, int 
 
     int row_mul = side > RIGHT ? 0 : 1;
     int col_mul = 1 - row_mul;
-    printf("--- ro %d rm %d co %d cm %d side %d\n", row_off, row_mul, col_off, col_mul, side);
+    log_C("--- ro %d rm %d co %d cm %d side %d\n", row_off, row_mul, col_off, col_mul, side);
 
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
-        printf(">> s: %d x %d y %d r %d c %d surf: %d\n", side, x, y, i * row_mul + row_off * col_mul, i * col_mul + col_off * row_mul, grid[x][y].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface);
+        log_C(">> s: %d x %d y %d r %d c %d surf: %d\n", side, x, y, i * row_mul + row_off * col_mul, i * col_mul + col_off * row_mul, grid[x][y].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface);
         CellSocks[i] = grid[x][y].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface;
     }
 }
 
 void GenRoadShape(enum Surface Road[FRAGMENTS_PER_CELL_SIDE][FRAGMENTS_PER_CELL_SIDE], enum Surface Sockets[DIR_COUNT][FRAGMENTS_PER_CELL_SIDE])
 {
-    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+    for (size_t side = 0; side < DIR_COUNT; side++)
     {
-        /* code */
+        for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+        {
+            int row_off = side == UP ? 2 : 0;
+            int col_off = side == LEFT ? 2 : 0;
+
+            int row_mul = side > RIGHT ? 0 : 1;
+            int col_mul = 1 - row_mul;
+            log_C("!! ro %d rm %d co %d cm %d side %d\n", row_off, row_mul, col_off, col_mul, side);
+
+            for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+            {
+                if (Sockets[side][i] == ROAD)
+                    Road[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul] = ROAD;
+            }
+        }
     }
-    
 }
 
 void GenerateTile(int x, int y)
@@ -93,10 +125,10 @@ void GenerateTile(int x, int y)
 
     for (size_t d = 0; d < FRAGMENTS_PER_CELL_SIDE; d++)
     {
-        printf("u: %d \n", Sockets[UP][d]);
-        printf("d: %d \n", Sockets[DOWN][d]);
-        printf("l: %d \n", Sockets[LEFT][d]);
-        printf("r: %d \n", Sockets[RIGHT][d]);
+        log_C("u: %d \n", Sockets[UP][d]);
+        log_C("d: %d \n", Sockets[DOWN][d]);
+        log_C("l: %d \n", Sockets[LEFT][d]);
+        log_C("r: %d \n", Sockets[RIGHT][d]);
     }
 
     enum Surface Road[FRAGMENTS_PER_CELL_SIDE][FRAGMENTS_PER_CELL_SIDE];
@@ -115,7 +147,7 @@ void GenerateTile(int x, int y)
 
 int AllignToGrid(int num)
 {
-    printf("%d %d\n", num - (num % CELL_SIZE), num);
+    log_C("%d %d\n", num - (num % CELL_SIZE), num);
     return num - (num % CELL_SIZE);
 }
 
@@ -172,7 +204,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         int row = grid_y / CELL_SIZE;
         int column = grid_x / CELL_SIZE;
 
-        printf("%d %d %d %d\n", grid_x, grid_y, column, row);
+        log_C("%d %d %d %d\n", grid_x, grid_y, column, row);
 
         GenerateTile(row, column);
 
@@ -262,7 +294,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     AllocConsole();
     freopen("CONOUT$", "w", stdout);
     freopen("CONOUT$", "w", stderr);
-    printf("Debug console initialized!\n");
+    log_C("Debug console initialized!\n");
+
+    logFile = fopen("debuglog.txt", "w");
+    if (!logFile)
+    {
+        log_C("Failed to open log file.\n");
+    }
 
     InitGrid();
 
