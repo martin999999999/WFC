@@ -35,7 +35,7 @@ typedef struct
 } RgbClamps;
 
 RgbClamps surfaceColorToClamp[SURFACE_COUNT] = {
-    [ROAD] = {{{0, 1}, {0, 4}, {5, 6}}},
-    [GRASS] = {{{0, 1}, {200, 1}, {0, 1}}},
-    [SAND] = {{{200,1}, {100, 1}, {0, 1}}}, 
+    [ROAD] = {{{0, 10}, {0, 40}, {5, 60}}},
+    [GRASS] = {{{0, 1}, {100, 50}, {0, 10}}},
+    [SAND] = {{{200,10}, {100, 10}, {0, 1}}}, 
 };

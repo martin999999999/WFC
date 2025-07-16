@@ -73,48 +73,43 @@ void GetCellSockets(enum Surface CellSocks[FRAGMENTS_PER_CELL_SIDE], int x, int 
     }
 }
 
+void GenRoadShape(enum Surface Road[FRAGMENTS_PER_CELL_SIDE][FRAGMENTS_PER_CELL_SIDE], enum Surface Sockets[DIR_COUNT][FRAGMENTS_PER_CELL_SIDE])
+{
+    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+    {
+        /* code */
+    }
+    
+}
+
 void GenerateTile(int x, int y)
 {
-    enum Surface UpSocks[FRAGMENTS_PER_CELL_SIDE];
-    enum Surface DownSocks[FRAGMENTS_PER_CELL_SIDE];
-    enum Surface LeftSocks[FRAGMENTS_PER_CELL_SIDE];
-    enum Surface RightSocks[FRAGMENTS_PER_CELL_SIDE];
+    enum Surface Sockets[DIR_COUNT][FRAGMENTS_PER_CELL_SIDE];
 
-    GetCellSockets(UpSocks, x - 1, y, UP);
-    GetCellSockets(DownSocks, x + 1, y, DOWN);
-    GetCellSockets(LeftSocks, x, y - 1, LEFT);
-    GetCellSockets(RightSocks, x, y + 1, RIGHT);
+    GetCellSockets(Sockets[UP], x - 1, y, UP);
+    GetCellSockets(Sockets[DOWN], x + 1, y, DOWN);
+    GetCellSockets(Sockets[LEFT], x, y - 1, LEFT);
+    GetCellSockets(Sockets[RIGHT], x, y + 1, RIGHT);
 
     for (size_t d = 0; d < FRAGMENTS_PER_CELL_SIDE; d++)
     {
-        printf("u: %d \n", UpSocks[d]);
-        printf("d: %d \n", DownSocks[d]);
-        printf("l: %d \n", LeftSocks[d]);
-        printf("r: %d \n", RightSocks[d]);
+        printf("u: %d \n", Sockets[UP][d]);
+        printf("d: %d \n", Sockets[DOWN][d]);
+        printf("l: %d \n", Sockets[LEFT][d]);
+        printf("r: %d \n", Sockets[RIGHT][d]);
     }
+
+    enum Surface Road[FRAGMENTS_PER_CELL_SIDE][FRAGMENTS_PER_CELL_SIDE];
+
+    GenRoadShape(Road, Sockets);
 
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
-        grid[x][y].fragments[0][i].surface = UpSocks[i];
-        grid[x][y].fragments[0][i].color = GenerateSurfaceColor(UpSocks[i]);
-    }
-
-    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
-    {
-        grid[x][y].fragments[2][i].surface = DownSocks[i];
-        grid[x][y].fragments[2][i].color = GenerateSurfaceColor(DownSocks[i]);
-    }
-
-    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
-    {
-        grid[x][y].fragments[i][0].surface = LeftSocks[i];
-        grid[x][y].fragments[i][0].color = GenerateSurfaceColor(LeftSocks[i]);
-    }
-
-    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
-    {
-        grid[x][y].fragments[i][2].surface = RightSocks[i];
-        grid[x][y].fragments[i][2].color = GenerateSurfaceColor(RightSocks[i]);
+        for (size_t j = 0; j < FRAGMENTS_PER_CELL_SIDE; j++)
+        {
+            grid[x][y].fragments[i][j].surface = Road[i][j];
+            grid[x][y].fragments[i][j].color = GenerateSurfaceColor(Road[i][j]);
+        }
     }
 }
 
@@ -140,7 +135,7 @@ void InitGrid()
                 for (size_t c = 0; c < FRAGMENTS_PER_CELL_SIDE; c++)
                 {
                     grid[i][j].fragments[r][c].color = RGB(255, 255, 255);
-                    grid[i][j].fragments[r][c].surface = rand() % SURFACE_COUNT;
+                    grid[i][j].fragments[r][c].surface = SURFACE_COUNT;
                 }
             }
         }
