@@ -78,17 +78,17 @@ void GetCellSockets(enum Surface CellSocks[FRAGMENTS_PER_CELL_SIDE], int x, int 
         return;
     }
 
-    int row_off = side == UP ? 2 : 0;
-    int col_off = side == LEFT ? 2 : 0;
+    int row_off = side == LEFT ? 2 : 0;
+    int col_off = side == UP ? 2 : 0;
 
-    int row_mul = side > RIGHT ? 0 : 1;
+    int row_mul = side > RIGHT ? 1 : 0;
     int col_mul = 1 - row_mul;
-    log_C("--- ro %d rm %d co %d cm %d side %d\n", row_off, row_mul, col_off, col_mul, side);
+    log_C("--- ro %d rm %d co %d cm %d side %d x %d y %d\n", row_off, row_mul, col_off, col_mul, side,x ,y);
 
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
-        log_C(">> s: %d x %d y %d r %d c %d surf: %d\n", side, x, y, i * row_mul + row_off * col_mul, i * col_mul + col_off * row_mul, grid[x][y].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface);
-        CellSocks[i] = grid[x][y].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface;
+        log_C(">> s: %d x %d y %d r %d c %d surf: %d\n", side, x, y, i * row_mul + row_off * col_mul, i * col_mul + col_off * row_mul, grid[y][x].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface);
+        CellSocks[i] = grid[y][x].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface;
     }
 }
 
@@ -96,33 +96,33 @@ void GenRoadShape(enum Surface Road[FRAGMENTS_PER_CELL_SIDE][FRAGMENTS_PER_CELL_
 {
     for (size_t side = 0; side < DIR_COUNT; side++)
     {
+        int row_off = side == UP ? 0 : 2;
+        int col_off = side == LEFT ? 0 : 2;
+
+        int row_mul = side > RIGHT ? 0 : 1;
+        int col_mul = 1 - row_mul;
+        log_C("\n!! ro %d rm %d co %d cm %d side %d\n", row_off, row_mul, col_off, col_mul, side);
+
         for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
         {
-            int row_off = side == UP ? 2 : 0;
-            int col_off = side == LEFT ? 2 : 0;
-
-            int row_mul = side > RIGHT ? 0 : 1;
-            int col_mul = 1 - row_mul;
-            log_C("!! ro %d rm %d co %d cm %d side %d\n", row_off, row_mul, col_off, col_mul, side);
-
-            for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
-            {
-                if (Sockets[side][i] == ROAD)
-                    Road[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul] = ROAD;
-            }
+            log_C(" %d %d %d ", Sockets[side][i], i * row_mul + row_off * col_mul, i * col_mul + col_off * row_mul);
+            if (Sockets[side][i] == ROAD)
+                Road[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul] = ROAD;
+            else
+                Road[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul] = SURFACE_COUNT;
         }
         log_C("\n");
     }
 }
 
-void GenerateTile(int x, int y)
+void GenerateTile(int col, int row)
 {
     enum Surface Sockets[DIR_COUNT][FRAGMENTS_PER_CELL_SIDE];
 
-    GetCellSockets(Sockets[UP], x - 1, y, UP);
-    GetCellSockets(Sockets[DOWN], x + 1, y, DOWN);
-    GetCellSockets(Sockets[LEFT], x, y - 1, LEFT);
-    GetCellSockets(Sockets[RIGHT], x, y + 1, RIGHT);
+    GetCellSockets(Sockets[LEFT], col - 1, row, UP);
+    GetCellSockets(Sockets[RIGHT], col + 1, row, DOWN);
+    GetCellSockets(Sockets[UP], col, row - 1, LEFT);
+    GetCellSockets(Sockets[DOWN], col, row + 1, RIGHT);
 
     for (size_t d = 0; d < FRAGMENTS_PER_CELL_SIDE; d++)
     {
@@ -136,20 +136,25 @@ void GenerateTile(int x, int y)
 
     GenRoadShape(Road, Sockets);
 
-    log_C("h\n");
+    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+    {
+        for (size_t j = 0; j < FRAGMENTS_PER_CELL_SIDE; j++)
+        {
+            log_C("%d ", Road[i][j]);
+        }
+        log_C("\n");
+    }
 
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
-        log_C("h1\n");
         for (size_t j = 0; j < FRAGMENTS_PER_CELL_SIDE; j++)
         {
-            log_C("h2 s\n");
-            grid[x][y].fragments[i][j].surface = Road[i][j];
-            log_C("h2 %d\n", grid[x][y].fragments[i][j].surface);
-            if (grid[x][y].fragments[i][j].surface >= SURFACE_COUNT)
-                grid[x][y].fragments[i][j].surface = rand() % (SURFACE_COUNT - 1) + 1;
-            log_C("h2 e %d\n", grid[x][y].fragments[i][j].surface);
-            grid[x][y].fragments[i][j].color = GenerateSurfaceColor(grid[x][y].fragments[i][j].surface);
+            grid[row][col].fragments[i][j].surface = Road[i][j];
+            log_C("sc1 %d\n", grid[row][col].fragments[i][j].surface);
+            if (grid[row][col].fragments[i][j].surface >= SURFACE_COUNT)
+                grid[row][col].fragments[i][j].surface = rand() % (SURFACE_COUNT - 1) + 1;
+            log_C("scr %d\n", grid[row][col].fragments[i][j].surface);
+            grid[row][col].fragments[i][j].color = GenerateSurfaceColor(grid[row][col].fragments[i][j].surface);
         }
     }
 }
@@ -211,11 +216,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         int grid_y = AllignToGrid(y);
 
         int row = grid_y / CELL_SIZE;
-        int column = grid_x / CELL_SIZE;
+        int col = grid_x / CELL_SIZE;
 
-        log_C("%d %d %d %d\n", grid_x, grid_y, column, row);
+        log_C("%d %d %d %d\n", grid_x, grid_y, col, row);
 
-        GenerateTile(row, column);
+        GenerateTile(col, row);
 
         InvalidateRect(hwnd, NULL, TRUE); // Redraw window
 
