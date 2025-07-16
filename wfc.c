@@ -83,7 +83,7 @@ void GetCellSockets(enum Surface CellSocks[FRAGMENTS_PER_CELL_SIDE], int x, int 
 
     int row_mul = side > RIGHT ? 1 : 0;
     int col_mul = 1 - row_mul;
-    log_C("--- ro %d rm %d co %d cm %d side %d x %d y %d\n", row_off, row_mul, col_off, col_mul, side,x ,y);
+    log_C("--- ro %d rm %d co %d cm %d side %d x %d y %d\n", row_off, row_mul, col_off, col_mul, side, x, y);
 
     for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
     {
@@ -108,6 +108,8 @@ void GenRoadShape(enum Surface Road[FRAGMENTS_PER_CELL_SIDE][FRAGMENTS_PER_CELL_
             log_C(" %d %d %d ", Sockets[side][i], i * row_mul + row_off * col_mul, i * col_mul + col_off * row_mul);
             if (Sockets[side][i] == ROAD)
                 Road[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul] = ROAD;
+            else if (Sockets[side][i] == SURFACE_COUNT)
+                Road[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul] = rand() % 10 > 7 ? ROAD : SURFACE_COUNT;
             else
                 Road[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul] = SURFACE_COUNT;
         }
