@@ -24,6 +24,9 @@ typedef struct
 Cell squares[MAX_CELLS];
 int square_count = 0;
 
+
+unsigned grid_height = GRID_HEIGHT_START;
+unsigned grid_width = GRID_WIDTH_START;
 Cell **grid;
 
 // Generate a random RGB color
@@ -40,12 +43,12 @@ int AllignToGrid(int num)
 
 void InitGrid()
 {
-    grid = calloc(WINDOW_HEIGHT_START, sizeof(Cell *));
-    for (size_t i = 0; i < WINDOW_HEIGHT_START; i++)
+    grid = calloc(grid_height, sizeof(Cell *));
+    for (size_t i = 0; i < grid_height; i++)
     {
-        grid[i] = calloc(WINDOW_WIDTH_START, sizeof(Cell));
+        grid[i] = calloc(grid_width, sizeof(Cell));
 
-        for (size_t j = 0; j < WINDOW_WIDTH_START; j++)
+        for (size_t j = 0; j < grid_width; j++)
         {
             grid[i][j].y = i * CELL_SIZE;
             grid[i][j].x = j * CELL_SIZE;
@@ -55,7 +58,7 @@ void InitGrid()
 
 void DeleteGrid()
 {
-    for (size_t i = 0; i < WINDOW_HEIGHT_START; i++)
+    for (size_t i = 0; i < grid_height; i++)
     {
         free(grid[i]);
     }
@@ -106,9 +109,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             DeleteObject(brush);
         }
 
-        for (int i = 0; i < GRID_HEIGHT_START; ++i)
+        for (int i = 0; i < grid_height; ++i)
         {
-            for (int j = 0; j < GRID_WIDTH_START; ++j)
+            for (int j = 0; j < grid_width; ++j)
             {
                 HBRUSH brush = CreateSolidBrush(squares[i].color);
                 HBRUSH old = SelectObject(hdc, brush);
