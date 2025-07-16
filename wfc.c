@@ -4,12 +4,14 @@
 
 #include <stdio.h>
 
+#include "wfc.h"
+
 #define CELL_FRAG_SIZE 20
 #define FRAGMENTS_PER_CELL_SIDE 3
 #define CELL_SIZE (CELL_FRAG_SIZE * FRAGMENTS_PER_CELL_SIDE)
 
-#define GRID_WIDTH_START 5
-#define GRID_HEIGHT_START 3
+#define GRID_WIDTH_START 15
+#define GRID_HEIGHT_START 10
 
 #define WINDOW_WIDTH_START (GRID_WIDTH_START * CELL_SIZE)
 #define WINDOW_HEIGHT_START (GRID_HEIGHT_START * CELL_SIZE)
@@ -18,12 +20,12 @@ typedef struct
 {
     int row, column;
     COLORREF color;
+    enum Surface surface;
 } Fragment;
 
 typedef struct
 {
     int x, y;
-    COLORREF color;
     Fragment fragments[FRAGMENTS_PER_CELL_SIDE][FRAGMENTS_PER_CELL_SIDE];
 } Cell;
 
@@ -35,6 +37,79 @@ Cell **grid;
 COLORREF GenerateRandomColor()
 {
     return RGB(rand() % 256, rand() % 256, rand() % 256);
+}
+
+COLORREF GenerateSurfaceColor(enum Surface surface)
+{
+    return RGB((rand() % surfaceColorToClamp[surface].clamps[RED].range  ) + surfaceColorToClamp[surface].clamps[RED].floor,
+               (rand() % surfaceColorToClamp[surface].clamps[GREEN].range) + surfaceColorToClamp[surface].clamps[GREEN].floor,
+               (rand() % surfaceColorToClamp[surface].clamps[BLUE].range ) + surfaceColorToClamp[surface].clamps[BLUE].floor);
+}
+
+void GetCellSockets(enum Surface CellSocks[FRAGMENTS_PER_CELL_SIDE], int x, int y, enum Direction side)
+{
+
+    if (x < 0 || y < 0 || x >= grid_width || y >= grid_height)
+    {
+        for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+        {
+            CellSocks[i] = rand() % SURFACE_COUNT;
+            printf("RAND s %d\n", side);
+        }
+        return;
+    }
+
+    int row_off = side == UP ? 0 : 2;
+    int col_off = side == LEFT ? 0 : 2;
+
+    int row_mul = side > RIGHT ? 0 : 1;
+    int col_mul = 1 - row_mul;
+    printf("--- ro %d rm %d co %d cm %d side %d\n", row_off, row_mul, col_off, col_mul, side);
+
+    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+    {
+        printf(">> %d %d %d %d %d\n", side, x, y, i * row_mul + row_off * col_mul, i * col_mul + col_off * row_mul);
+        CellSocks[i] = grid[x][y].fragments[i * row_mul + row_off * col_mul][i * col_mul + col_off * row_mul].surface;
+    }
+}
+
+void GenerateTile(int x, int y)
+{
+    enum Surface UpSocks[FRAGMENTS_PER_CELL_SIDE];
+    enum Surface DownSocks[FRAGMENTS_PER_CELL_SIDE];
+    enum Surface LeftSocks[FRAGMENTS_PER_CELL_SIDE];
+    enum Surface RightSocks[FRAGMENTS_PER_CELL_SIDE];
+
+    GetCellSockets(UpSocks, x - 1, y, UP);
+    GetCellSockets(DownSocks, x + 1, y, DOWN);
+    GetCellSockets(LeftSocks, x, y - 1, LEFT);
+    GetCellSockets(RightSocks, x, y + 1, RIGHT);
+
+    for (size_t d = 0; d < FRAGMENTS_PER_CELL_SIDE; d++)
+    {
+        printf("u: %d \n", UpSocks[d]);
+        printf("d: %d \n", DownSocks[d]);
+        printf("l: %d \n", LeftSocks[d]);
+        printf("r: %d \n", RightSocks[d]);
+    }
+
+    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+    {
+        grid[x][y].fragments[0][i].surface = SAND;
+        grid[x][y].fragments[0][i].color = GenerateSurfaceColor(SAND);
+    }
+
+    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+    {
+        grid[x][y].fragments[1][i].surface = ROAD;
+        grid[x][y].fragments[1][i].color = GenerateSurfaceColor(ROAD);
+    }
+
+    for (size_t i = 0; i < FRAGMENTS_PER_CELL_SIDE; i++)
+    {
+        grid[x][y].fragments[2][i].surface = GRASS;
+        grid[x][y].fragments[2][i].color = GenerateSurfaceColor(GRASS);
+    }
 }
 
 int AllignToGrid(int num)
@@ -54,12 +129,12 @@ void InitGrid()
         {
             grid[i][j].y = i * CELL_SIZE;
             grid[i][j].x = j * CELL_SIZE;
-            grid[i][j].color = RGB(255, 255, 255);
             for (size_t r = 0; r < FRAGMENTS_PER_CELL_SIDE; r++)
             {
                 for (size_t c = 0; c < FRAGMENTS_PER_CELL_SIDE; c++)
                 {
                     grid[i][j].fragments[r][c].color = RGB(255, 255, 255);
+                    grid[i][j].fragments[r][c].surface = rand() % SURFACE_COUNT;
                 }
             }
         }
@@ -98,15 +173,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         printf("%d %d %d %d\n", grid_x, grid_y, column, row);
 
-        grid[row][column].color = GenerateRandomColor();
-
-        for (size_t r = 0; r < FRAGMENTS_PER_CELL_SIDE; r++)
-        {
-            for (size_t c = 0; c < FRAGMENTS_PER_CELL_SIDE; c++)
-            {
-                grid[row][column].fragments[r][c].color = GenerateRandomColor();
-            }
-        }
+        GenerateTile(row, column);
 
         InvalidateRect(hwnd, NULL, TRUE); // Redraw window
 
